@@ -27,7 +27,7 @@ The ESP32 controls the tuner via onboard relays and serves a Wi‑Fi web interfa
   - Optional: last reset time is "-" until NTP is available
 
 - Relay and I/O logic
-  - Relay 1 (GPIO 16): Reset (inverted 500 ms pulse)
+  - Relay 1 (GPIO 16): Reset (inverted 250 ms pulse)
   - Relay 2 (GPIO 17): Power ON/OFF
   - GPIO 34: Tuning input (yellow wire, via voltage divider)
 

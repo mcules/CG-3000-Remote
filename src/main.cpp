@@ -261,6 +261,11 @@ void setup()
   digitalWrite(PIN_RELAY_POWER, LOW);
 
   wm.setSaveConfigCallback(saveConfigCallback);
+  wm.setHostname("CG3000-ESP32");
+  wm.setConnectRetries(3);
+  wm.setConnectTimeout(20);
+  wm.setConfigPortalTimeout(300);
+  wm.setEnableConfigPortal(true);
 
   if (!wm.autoConnect("CG3000-Setup", "tuner1234"))
   {
@@ -293,6 +298,15 @@ void setup()
   server.on("/status", handleStatus);
   server.on("/reset", HTTP_POST, handleReset);
   server.on("/power", HTTP_POST, handlePower);
+
+  server.onNotFound([]()
+                    {
+    Serial.printf("404 for: %s %s\n",
+                  server.method() == HTTP_GET ? "GET" :
+                  server.method() == HTTP_POST ? "POST" : "OTHER",
+                  server.uri().c_str());
+    server.send(404, "text/plain", "Not found"); });
+
   server.begin();
 }
 
