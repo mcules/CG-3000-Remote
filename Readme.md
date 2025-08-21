@@ -3,7 +3,7 @@
 This project replaces the original CG3000 tuner remote control with an [ESP32 Relay X2 board (ESP32‑WROOM‑32E)](https://www.amazon.de/dp/B0B97L9446?&tag=amazon313-21).
 The ESP32 controls the tuner via onboard relays and serves a Wi‑Fi web interface for status and control.
 
-![Web UI Screenshot](images/image.png)
+![Web UI Screenshot](images/webinterface.png)
 
 ---
 
@@ -45,7 +45,7 @@ The ESP32 controls the tuner via onboard relays and serves a Wi‑Fi web interfa
 ### Required components
 
 - [ESP32 Relay X2 board (ESP32‑WROOM‑32E)](https://www.amazon.de/dp/B0B97L9446?&tag=amazon313-21)
-- 2 resistors for a voltage divider (33 kΩ + 10 kΩ) for the tuning input (yellow wire)
+- 10kΩ resistor for the tuning input (yellow wire)
 
 ### Power
 
@@ -55,22 +55,9 @@ The ESP32 controls the tuner via onboard relays and serves a Wi‑Fi web interfa
 
 ### Wiring
 
-1. Relays
+![Schematic](images/schematic.png)
 
-- Relay 1 (GPIO 16) → Reset line (yellow)
-  - Active HIGH → 500 ms pulse
-- Relay 2 (GPIO 17) → Tuner power line (switches 13.8 V via the onboard relay)
-  - Depending on relay board wiring: HIGH = OFF, LOW = ON (adjust server logic if needed)
-
-2. Status input
-
-- Yellow wire (Tuning active) → Voltage divider 33 kΩ + 10 kΩ → GPIO 34
-  - Divides 13.8 V to a safe input level for the ESP32
-
-3. Notes
-
-- Red (Power) not needed → power is known from the relay state
-- Yellow (Reset) is controlled by the relay
+![GX16 Connector](images/gx16_connector.png)
 
 ---
 
@@ -134,7 +121,7 @@ Asynchronous MQTT status and control to avoid blocking the web UI.
 - Base topic: cg3000/<deviceId>/...
   - Example: cg3000/cg3000-ABCD1234/...
 
-Topics
+#### Topics
 
 - State (retained)
   - cg3000/<deviceId>/power/state → "ON" | "OFF"
@@ -145,7 +132,7 @@ Topics
   - cg3000/<deviceId>/power/set → "ON" | "OFF" | "TOGGLE"
   - cg3000/<deviceId>/reset/set → any payload triggers a 500 ms reset pulse
 
-Discovery (custom, retained)
+#### Discovery (custom, retained)
 
 - Minimal config under ham/... to allow your own system to discover the device:
   - ham/switch/<deviceId>_power/config
@@ -155,36 +142,23 @@ Discovery (custom, retained)
   - ham/sensor/<deviceId>_time/config
 - Payloads contain id, referenced cmd/state topics, and a compact device object (id, manufacturer, model, name).
 
-Publish strategy
+#### Publish strategy
 
 - Publish only on value changes, or at least every 5 minutes (heartbeat).
 - All state topics are retained so new subscribers receive the current state immediately.
 
-Web UI
+#### Web UI
 
 - A dot in the top-right indicates MQTT connection:
   - green = connected
   - blue = not connected
 
-Dependencies (PlatformIO)
-
-- ottowinter/AsyncMqttClient
-- me-no-dev/AsyncTCP
-- tzapu/WiFiManager
-
-Examples
+## Examples
 
 - Toggle power:
   - mosquitto_pub -h mqtt.ham.local -t "cg3000/<deviceId>/power/set" -m "TOGGLE"
 - Read current power state:
   - mosquitto_sub -h mqtt.ham.local -t "cg3000/<deviceId>/power/state" -v
-
----
-
-## Notes and tips
-
-- Safety: verify your voltage divider for the yellow wire before connecting to GPIO 34
-- Relay polarity: if your relay board is LOW‑active, invert your server read/write logic accordingly
 
 ---
 

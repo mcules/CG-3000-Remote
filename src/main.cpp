@@ -158,7 +158,7 @@ String htmlPage()
   html += "    const power=s.power===true;const tuning=s.tuning===true;";
   html += "    const tuneBadge=document.getElementById('tuningBadge');";
   html += "    tuneBadge.className='badge '+(tuning?'on':'off');";
-  html += "    tuneBadge.textContent=tuning?'ACTIVE':'IDLE';";
+  html += "    tuneBadge.textContent=tuning?'TUNED':'NOT TUNED';";
   html += "    document.getElementById('lastReset').textContent=s.lastResetStr||'-';";
   html += "    document.getElementById('now').textContent=s.timeStr||'-';";
   html += "    const tgl=document.getElementById('powerToggle');";
@@ -247,6 +247,22 @@ String htmlPage()
   return html;
 }
 
+bool readTuning(uint16_t stableMs = 15) {
+  bool first = digitalRead(PIN_STATUS_TUNING) == LOW;
+  unsigned long start = millis();
+  while (millis() - start < stableMs) {
+    if ((digitalRead(PIN_STATUS_TUNING) == LOW) != first) {
+      first = digitalRead(PIN_STATUS_TUNING) == LOW;
+      start = millis();
+    }
+  }
+  return first;
+}
+
+bool readPower() {
+  return (digitalRead(PIN_RELAY_POWER) == HIGH);
+}
+
 bool resolveMqttHostNonBlocking()
 {
   unsigned long nowMs = millis();
@@ -276,8 +292,8 @@ bool mqttPublishState(bool forceAll = false)
     return false;
 
   String base = deviceBaseTopic();
-  bool power = (digitalRead(PIN_RELAY_POWER) == HIGH);
-  bool tuning = digitalRead(PIN_STATUS_TUNING);
+  bool power = readPower();
+  bool tuning = readTuning();
 
   g_timeValid = isTimeValid();
   time_t now = nowSec();
@@ -447,8 +463,8 @@ void handleRoot()
 
 void handleStatus()
 {
-  bool power = (digitalRead(PIN_RELAY_POWER) == HIGH);
-  bool tuning = digitalRead(PIN_STATUS_TUNING);
+  bool power = readPower();
+  bool tuning = readTuning();
 
   g_timeValid = isTimeValid();
 
@@ -521,7 +537,7 @@ void setup()
   Serial.begin(115200);
   g_bootMillis = millis();
 
-  pinMode(PIN_STATUS_TUNING, INPUT);
+  pinMode(PIN_STATUS_TUNING, INPUT_PULLUP);
   pinMode(PIN_RELAY_RESET, OUTPUT);
   pinMode(PIN_RELAY_POWER, OUTPUT);
 
