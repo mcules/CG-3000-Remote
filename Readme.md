@@ -31,6 +31,13 @@ The ESP32 controls the tuner via onboard relays and serves a Wi‑Fi web interfa
   - Relay 2 (GPIO 17): Power ON/OFF
   - GPIO 34: Tuning input (yellow wire, via voltage divider)
 
+- MQTT with custom auto‑discovery
+  - Asynchronous MQTT client (non‑blocking web UI)
+  - Auto‑discovers via retained config under ham/... and connects to broker mqtt.ham.local
+  - Publishes only on value changes or at least every 5 minutes (heartbeat)
+  - Retained state topics for instant state on subscriber connect
+  - Web UI indicator (top‑right): green = connected, blue = not connected
+
 ---
 
 ## Hardware
