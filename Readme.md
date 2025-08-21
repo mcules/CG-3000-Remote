@@ -104,6 +104,8 @@ The ESP32 controls the tuner via onboard relays and serves a Wi‑Fi web interfa
 
 ## Endpoints
 
+### HTTP
+
 - GET / → serves the web UI
 - GET /status → JSON with fields:
   - power: boolean
@@ -115,6 +117,60 @@ The ESP32 controls the tuner via onboard relays and serves a Wi‑Fi web interfa
   - timeValid: boolean (true if NTP time is valid)
 - POST /power → toggles power
 - POST /reset → triggers a 500 ms reset pulse
+
+### MQTT
+
+Asynchronous MQTT status and control to avoid blocking the web UI.
+
+- Broker: mqtt.ham.local (resolved via DNS/mDNS with exponential backoff)
+- Port: 1883 (no TLS/auth by default)
+- Base topic: cg3000/<deviceId>/...
+  - Example: cg3000/cg3000-ABCD1234/...
+
+Topics
+
+- State (retained)
+  - cg3000/<deviceId>/power/state → "ON" | "OFF"
+  - cg3000/<deviceId>/tuning/state → "ON" | "OFF"
+  - cg3000/<deviceId>/lastReset/str → formatted timestamp or "-"
+  - cg3000/<deviceId>/time/str → formatted time or uptime text
+- Commands
+  - cg3000/<deviceId>/power/set → "ON" | "OFF" | "TOGGLE"
+  - cg3000/<deviceId>/reset/set → any payload triggers a 500 ms reset pulse
+
+Discovery (custom, retained)
+
+- Minimal config under ham/... to allow your own system to discover the device:
+  - ham/switch/<deviceId>_power/config
+  - ham/button/<deviceId>_reset/config
+  - ham/binary_sensor/<deviceId>_tuning/config
+  - ham/sensor/<deviceId>_lastreset/config
+  - ham/sensor/<deviceId>_time/config
+- Payloads contain id, referenced cmd/state topics, and a compact device object (id, manufacturer, model, name).
+
+Publish strategy
+
+- Publish only on value changes, or at least every 5 minutes (heartbeat).
+- All state topics are retained so new subscribers receive the current state immediately.
+
+Web UI
+
+- A dot in the top-right indicates MQTT connection:
+  - green = connected
+  - blue = not connected
+
+Dependencies (PlatformIO)
+
+- ottowinter/AsyncMqttClient
+- me-no-dev/AsyncTCP
+- tzapu/WiFiManager
+
+Examples
+
+- Toggle power:
+  - mosquitto_pub -h mqtt.ham.local -t "cg3000/<deviceId>/power/set" -m "TOGGLE"
+- Read current power state:
+  - mosquitto_sub -h mqtt.ham.local -t "cg3000/<deviceId>/power/state" -v
 
 ---
 
